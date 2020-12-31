@@ -10,6 +10,5 @@ main = do
   let filepath = head args
   handle <- openFile filepath ReadMode
   dimacs <- hGetContents handle
-  print $ parseDimacs dimacs
   let res = sat $ parseDimacs dimacs
   print res
