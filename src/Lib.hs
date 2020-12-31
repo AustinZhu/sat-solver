@@ -31,22 +31,40 @@ replace var val expr =
 shorthand :: Prop -> Prop
 shorthand (And p1 p2)
   | p1 == Val False = Val False
-  | p1 == Val True = if p2 == Val True then Val True else p2
+  | p1 == Val True = p2
   | p2 == Val False = Val False
   | p2 == Val True = p1
   | otherwise = And p1 p2
 shorthand (Or p1 p2)
   | p1 == Val True = Val True
-  | p1 == Val False = if p2 == Val False then Val False else p2
-  | p2 == Val False = Val False
-  | p2 == Val True = p1
-  | otherwise = And p1 p2
+  | p1 == Val False = p2
+  | p2 == Val True = Val True
+  | p2 == Val False = p1
+  | otherwise = Or p1 p2
 shorthand _ = error "Not exausted"
 
 simplify :: Prop -> Prop
 simplify (Var a) = Var a
-simplify (And p1 p2) = shorthand $ And (simplify p1) (simplify p2)
-simplify (Or p1 p2) = shorthand $ Or (simplify p1) (simplify p2)
+simplify (Or x y) =
+  -- Get rid of False values, which are irrelevant.
+  let es = filter (/= Val False) [simplify x, simplify y]
+   in -- If True is in a branch, the entire expression is True.
+      if Val True `elem` es
+        then Val True
+        else case es of
+          -- If all the values were False, this 'or' is unsatisfied.
+          [] -> Val False
+          [e] -> e
+          [e1, e2] -> Or e1 e2
+-- Dual to the simplify (Or x y) definition.
+simplify (And x y) =
+  let es = filter (/= Val True) [simplify x, simplify y]
+   in if Val False `elem` es
+        then Val False
+        else case es of
+          [] -> Val True
+          [e] -> e
+          [e1, e2] -> And e1 e2
 simplify (Not p) = case p of
   Val a -> Val (not a)
   _ -> Not p
@@ -67,7 +85,7 @@ sat expr = case findVar expr of
 parseDimacs :: String -> Prop
 parseDimacs content = parseProblem $ filter notHeader (lines content)
   where
-    notHeader a = a /= [] && (head a /= 'p') && (head a /= 'c')
+    notHeader a = a /= [] && (head a /= 'p') && (head a /= 'c') && (head a /= '0') && (head a /= '%')
 
 parseProblem :: [String] -> Prop
 parseProblem problem = foldl1 And (map toProp problem)

@@ -1,14 +1,16 @@
 module Main where
 
 import Lib
-import System.Environment
 import System.IO
 
-main :: IO ()
+main :: IO [()]
 main = do
-  args <- getArgs
-  let filepath = head args
-  handle <- openFile filepath ReadMode
-  dimacs <- hGetContents handle
-  let res = sat $ parseDimacs dimacs
-  print res
+  let filepath = map path [1 .. 1000]
+  mapM run filepath
+  where
+    path a = "./problems/uf20-0" ++ show a ++ ".cnf"
+    run p = do
+      handle <- openFile p ReadMode
+      dimacs <- hGetContents handle
+      let res = sat $ parseDimacs dimacs
+      print res

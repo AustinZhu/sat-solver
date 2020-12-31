@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dabc9ac1505f1a80a4c161275fef4dc5999e6cd15193491caf9a08fe4e5e066d
+-- hash: 62003f5b442cdbd92be09388f84f69355a2d7cb3e4a80eb0aa172c075f20621f
 
 name:           sat-solver
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Sat
   other-modules:
       Paths_sat_solver
   hs-source-dirs:
