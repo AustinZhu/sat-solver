@@ -73,7 +73,7 @@ parseProblem :: [String] -> Prop
 parseProblem problem = foldl1 And (map toProp problem)
   where
     parseNum :: Int -> Prop
-    parseNum n = if n < 0 then Not (Var n) else Var n
+    parseNum n = if n < 0 then Not (Var (- n)) else Var n
 
     toProp :: String -> Prop
     toProp line = foldl1 Or (map parseNum (filter (/= 0) nums)) where nums :: [Int] = map read (words line)
