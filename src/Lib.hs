@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+module Lib where
+
 import Control.Applicative
 
 data Prop
@@ -27,24 +29,27 @@ replace var val expr =
     Val b -> Val b
 
 shorthand :: Prop -> Prop
-shorthand (And p1 p2) | p1 == Val False = Val False
-                      | p1 == Val True = if p2 == Val True then Val True else p2
-                      | p2 == Val False = Val False
-                      | p2 == Val True = p1
-                      | otherwise = And p1 p2
-shorthand (Or p1 p2) | p1 == Val True = Val True
-                     | p1 == Val False = if p2 == Val False then Val False else p2
-                     | p2 == Val False = Val False
-                     | p2 == Val True = p1
-                     | otherwise = And p1 p2
+shorthand (And p1 p2)
+  | p1 == Val False = Val False
+  | p1 == Val True = if p2 == Val True then Val True else p2
+  | p2 == Val False = Val False
+  | p2 == Val True = p1
+  | otherwise = And p1 p2
+shorthand (Or p1 p2)
+  | p1 == Val True = Val True
+  | p1 == Val False = if p2 == Val False then Val False else p2
+  | p2 == Val False = Val False
+  | p2 == Val True = p1
+  | otherwise = And p1 p2
 shorthand _ = error "Not exausted"
 
 simplify :: Prop -> Prop
 simplify (Var a) = Var a
 simplify (And p1 p2) = shorthand $ And (simplify p1) (simplify p2)
 simplify (Or p1 p2) = shorthand $ Or (simplify p1) (simplify p2)
-simplify (Not p) = case p of Val a -> Val (not a)
-                             _ -> Not p
+simplify (Not p) = case p of
+  Val a -> Val (not a)
+  _ -> Not p
 simplify (Val b) = Val b
 
 getBool :: Prop -> Bool
@@ -53,15 +58,22 @@ getBool _ = error "Not a value"
 
 sat :: Prop -> Bool
 sat expr = case findVar expr of
-          Nothing -> getBool expr
-          Just var -> sat (letTrue var) || sat (letFalse var)
-            where letTrue v = simplify (replace v True expr)
-                  letFalse v = simplify (replace v False expr)
+  Nothing -> getBool expr
+  Just var -> sat (letTrue var) || sat (letFalse var)
+    where
+      letTrue v = simplify (replace v True expr)
+      letFalse v = simplify (replace v False expr)
 
 parseDimacs :: String -> Prop
-parseDimacs form = foldl1 And (map toProp (lines form))
-  where parseNum :: Int -> Prop
-        parseNum n = if n < 0 then Not (Var n) else Var n
+parseDimacs content = parseProblem $ filter notHeader (lines content)
+  where
+    notHeader a = a /= [] && (head a /= 'p') && (head a /= 'c')
 
-        toProp :: String -> Prop
-        toProp line = foldl1 Or (map parseNum (filter (/= 0) nums)) where nums :: [Int] = map read (words line)
+parseProblem :: [String] -> Prop
+parseProblem problem = foldl1 And (map toProp problem)
+  where
+    parseNum :: Int -> Prop
+    parseNum n = if n < 0 then Not (Var n) else Var n
+
+    toProp :: String -> Prop
+    toProp line = foldl1 Or (map parseNum (filter (/= 0) nums)) where nums :: [Int] = map read (words line)
